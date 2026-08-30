@@ -8,7 +8,7 @@ topics:
   - "bluetooth"
   - "websocket"
   - "reverseengineering"
-published: false
+published: true
 ---
 
 Scratchにはmicro:bit拡張があります。
