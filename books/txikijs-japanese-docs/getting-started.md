@@ -1,79 +1,88 @@
 ---
-title: "インストールと最初の実行"
+title: "はじめに"
 free: true
 ---
 
-# インストールと最初の実行
+# はじめに
 
-まずは `tjs` コマンドが動く状態を作ります。
+`txiki.js` は小さく強力なJavaScript runtimeです。名前の由来になったバスク語 `txikia` は「小さい」「tiny」という意味です。最新のECMAScriptを対象にし、WinterTC互換を目指しています。
 
-公式READMEでは、ソースからビルドする最小手順として次の流れが案内されています。
+JavaScript engineにはQuickJS-ng、platform layerにはlibuvを使っています。ブラウザで馴染みのあるWeb Platform APIと、filesystem・socket・processなどのOS寄りAPIを同じruntimeで扱えるのが特徴です。
 
-```bash
-git clone --recursive https://github.com/saghul/txiki.js --shallow-submodules
-cd txiki.js
-make
-./build/tjs
-```
+## インストール
 
-環境ごとの詳しいビルド方法は公式の Building ドキュメントを参照してください。
-
-https://txikijs.org/docs/building
-
-## REPLを触る
-
-`./build/tjs` のようにファイル名を指定せず起動すると、対話環境を使えます。
-
-```js
-> 1 + 2
-3
-```
-
-Web API も試せます。
-
-```js
-> crypto.randomUUID()
-```
-
-## ファイルを実行する
-
-`hello.js` を作ります。
-
-```js
-console.log('Hello from txiki.js!');
-console.log(navigator.userAgent);
-```
-
-実行します。
+### Homebrew（macOS / Linux）
 
 ```bash
+brew install saghul/tap/txikijs
+```
+
+### WinGet（Windows）
+
+```powershell
+winget install Saghul.TxikiJS
+```
+
+### Scoop（Windows）
+
+```powershell
+scoop install txikijs
+```
+
+### Prebuilt binary
+
+GitHub ReleasesではmacOS arm64 / x86_64、Windows x86_64向けbinaryが配布されています。archiveを展開し、`tjs` を `PATH` に追加します。
+
+### mise
+
+project単位でversionを固定するならmiseも利用できます。
+
+```bash
+mise use "github:saghul/txiki.js[exe=tjs]"
+```
+
+Linuxなどrelease binaryがない環境ではsource buildを使います。
+
+## 最初の実行
+
+```bash
+tjs eval "console.log('hello world')"
+```
+
+fileを実行する場合:
+
+```bash
+echo "console.log('hello from a file')" > hello.js
 tjs run hello.js
 ```
 
-txiki.js の JavaScript ファイルは基本的に ES Module として扱われます。このため、今後の章でも `import` / `export` を前提に進めます。
+引数なしでTTY上の `tjs` を起動するとREPLになります。
 
-## fetchしてみる
-
-ブラウザに近い `fetch` API をそのまま使えます。
-
-```js
-const response = await fetch('https://example.com/');
-console.log(response.status);
-console.log(await response.text());
+```bash
+tjs
 ```
 
-トップレベル `await` が使えるため、短いスクリプトなら非同期処理のためだけに関数で包む必要はありません。
+command一覧は次で確認できます。
 
-## 覚えておくコマンド
-
-```text
-tjs run FILE       JavaScriptを実行
-tjs eval EXPR      式を評価
-tjs serve FILE     HTTPアプリを起動
-tjs test DIR       テストを実行
-tjs bundle ...     esbuildでbundle
-tjs compile ...    単一JSを実行ファイル化
-tjs app ...        TPKアプリを操作
+```bash
+tjs --help
 ```
 
-このうち `serve` と `app` は後の章で詳しく触れます。
+sourceからbuildした場合は通常 `./build/tjs` を使います。
+
+## 対応platform
+
+- GNU/Linux
+- macOS
+- Windows
+- その他のUnix系OS
+
+## 主な機能
+
+txiki.jsには、`fetch`、WebSocket、timer、Crypto、Web WorkersなどのWeb Platform API、TCP/TLS/UDP/Unix socket、filesystem、child process、signal、DNS、HTTP serverなどが含まれます。
+
+さらに `tjs:sqlite`、`tjs:ffi`、`tjs:path`、`tjs:hashing` などの標準module、WASI、standalone executable、TPK App Packages、built-in test runnerも利用できます。
+
+このBookは公式Docsの21ページ構成に対応した非公式日本語版です。文章は日本語向けに書き直しつつ、仕様・API項目・注意点を追える構成にしています。
+
+参照: txiki.js `website/docs/getting-started.md`
