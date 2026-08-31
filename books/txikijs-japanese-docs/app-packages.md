@@ -1,32 +1,38 @@
 ---
-title: "TPK App Packages"
+title: "App Packages（TPK）"
 free: true
 ---
 
-# TPK App Packages
+# App Packages（TPK）
 
-TPKは、txiki.jsアプリを複数ファイルのまままとめるための実験的なパッケージ形式です。
+TPKはtxiki.js application向けの実験的package formatです。複数file、ES Module、assetを含むappを `.tpk` archiveへまとめたり、txiki.js runtime込みのstandalone executableへできます。
 
-npmのようなパッケージマネージャではありません。目的は**アプリ全体を `.tpk` にまとめること、またはtxiki.jsランタイム込みの単一実行ファイルを作ること**です。
+> TPK formatと `tjs app` commandはExperimentalです。format、CLI、挙動は今後変わる可能性があります。
 
-> TPKと `tjs app` はExperimentalです。今後フォーマットやCLIが変わる可能性があります。
+`tjs compile` が単一JavaScriptを対象にするのに対し、`tjs app compile` はdirectory treeをZIPとしてruntimeへ付加します。実行時には一時directoryへ展開され、同じbuildの次回起動ではcacheを再利用します。
 
-## 最初のTPKアプリ
+## Quick start
 
 ```bash
 tjs app init
+tjs run app/src/main.js
+tjs app compile myapp
+./myapp
 ```
 
-すると次のような構成ができます。
+## Directory構造
 
 ```text
 app/
 ├── app.json
 └── src/
-    └── main.js
+    ├── main.js
+    └── ...
 ```
 
-初期の `app.json` は非常に小さいです。
+## Manifest
+
+最小 `app.json`:
 
 ```json
 {
@@ -36,119 +42,114 @@ app/
 }
 ```
 
-`version` は現在 `0`。`build` はビルド時に自動で埋められます。
+主なfield:
 
-## 開発中の実行
+| field | 内容 |
+|---|---|
+| `version` | schema version。現在は `0` |
+| `build` | build時に自動生成されるmetadata |
+| `build.id` | buildごとに生成されるUUID |
+| `build.timestamp` | UTC timestamp |
+| `main` | entry point。省略時は `src/main.js` |
+| `imports` | Import Mapのmapping |
+| `scopes` | Import Mapのscoped override |
 
-TPKにする前は普通のJavaScriptとして動かせます。
+## `tjs app init`
 
 ```bash
-tjs run app/src/main.js
+tjs app init
 ```
 
-## `.tpk` を作る
+`app/app.json` とhello-world用 `app/src/main.js` を生成します。既に `app/` がある場合はerrorになります。
+
+## `tjs app pack`
 
 ```bash
 tjs app pack
-```
-
-出力名を指定することもできます。
-
-```bash
 tjs app pack myapp.tpk
 ```
 
-`.tpk` の中身はZIP形式で、`app/` 以下のファイルがまとめられます。ビルドごとに新しいIDとtimestampがmanifestへ追加されます。
+`.tpk` は標準ZIP archiveです。毎回新しいbuild IDとtimestampを生成し、archive内のmanifestへ書き込みます。output名省略時はbuild IDを元にした名前になります。
 
-## 単一実行ファイルを作る
+## `tjs app compile`
 
 ```bash
+tjs app compile
 tjs app compile myapp
 ```
 
-Linux/macOSなら次のように直接実行できます。
+txiki.js runtimeとapp archiveを含むself-contained executableを生成します。実行先にtxiki.jsをinstallする必要はありません。
 
-```bash
-./myapp
+## Packagingの内部
+
+`app/` 以下のfileを収集し、build metadataを更新したうえでZIP化します。archive rootは `app/` directoryそのものではなく、その中身です。
+
+```text
+app.json
+src/
+  main.js
+  ...
 ```
 
-生成された実行ファイルには、txiki.jsランタイムとアプリのZIPデータが両方含まれています。
+## Compiled binaryの構造
 
-## 内部構造
-
-概念的には、実行ファイルの末尾に次の情報が追加されます。
+概念的にはtxiki.js executableの末尾へ次を追加します。
 
 ```text
 [txiki.js executable]
 [Build UUID]
-[ZIPのSHA-256]
+[ZIP dataのSHA-256]
 [ZIP data]
 [ZIP size]
-[TPK magic]
+[magic: TPK\0]
 ```
 
-末尾には `TPK\0` というmagicがあり、txiki.jsは起動時に自分自身を調べてTPKアプリかどうか判定します。
+runtimeは起動時に自身の末尾を見てTPK magicを検出します。
 
-TPKだった場合はZIPのSHA-256を検証し、システムの一時ディレクトリへ展開して、`app.json` の `main` を実行します。同じbuild IDは展開結果を再利用できるため、毎回すべて展開する必要はありません。
+## 起動時の処理
 
-## `tjs compile` との違い
+TPK executableだった場合、runtimeは概ね次を行います。
 
-`tjs compile` は基本的に単一のJavaScriptをQuickJS bytecodeとして実行ファイルへ埋め込みます。
+1. trailerからZIP size、build ID、hash、ZIP dataを読む
+2. SHA-256でarchive integrityを確認
+3. system temp内に同じbuild IDの展開cacheがあるか確認
+4. なければtemporary locationへ展開して完成後にatomic rename
+5. 完全展開済みを示すsentinelを置く
+6. manifestのversionとbuild IDをvalidation
+7. `main` のentry pointを実行
 
-一方、`tjs app compile` はディレクトリ構造・複数module・assetsを含んだアプリ全体をZIPとして保持します。
+build IDはbuildごとに新しくなるため、build単位で別cacheになります。古いcacheはsystem tempのcleanup policyに任されます。
 
-```text
-tjs compile      → 単一JS向け
-tjs app compile  → 複数ファイルのアプリ向け
+## `tjs compile` との比較
+
+| | `tjs compile` | `tjs app compile` |
+|---|---|---|
+| input | 単一 `.js` | `app/` 全体 |
+| app data | compiled JavaScript | ZIP内のsource / asset |
+| 事前bundle | 複数fileなら必要 | 不要 |
+| directory維持 | しない | する |
+| integrity check | TPK方式ではない | ZIP SHA-256 |
+
+## Multi-file example
+
+```js
+// app/src/main.js
+import { greet } from './lib/greet.js';
+greet('world');
 ```
 
-## Import Mapsも入れられる
-
-`app.json` には `imports` と `scopes` を書けます。
-
-```json
-{
-  "version": 0,
-  "build": {},
-  "main": "src/main.js",
-  "imports": {
-    "utils": "./src/lib/utils.js"
-  }
+```js
+// app/src/lib/greet.js
+export function greet(name) {
+  console.log(`Hello, ${name}!`);
 }
 ```
 
-するとアプリ側は次のように書けます。
-
-```js
-import { hello } from 'utils';
+```bash
+tjs app compile hello
+./hello
 ```
 
-## 現在のCLI
+TPKはnpmのようなdependency registry / package managerではありません。`install` や `publish` の仕組みではなく、**applicationそのものをpackageするformat**です。
 
-現時点の `tjs app` の主要コマンドは次の3つです。
-
-```text
-tjs app init
-tjs app pack [outfile]
-tjs app compile [outfile]
-```
-
-`install` や `publish` をするnpm風の仕組みではない点は覚えておきましょう。
-
-## 次に作るなら
-
-ここまで分かれば、txiki.jsらしい題材として次の構成がおすすめです。
-
-```text
-HTTP server
-    ↓
-tjs:sqlite
-    ↓
-複数ES Modules + assets
-    ↓
-tjs app compile
-    ↓
-1バイナリのWebアプリ
-```
-
-小さな掲示板、ローカルツール、WebSocketアプリなどをTPKにすると、このランタイムの面白さがかなり見えてきます。
+参照: txiki.js `website/docs/guides/app-packages.md`
