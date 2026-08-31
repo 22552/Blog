@@ -1,0 +1,12 @@
+title: "txiki.js 日本語ガイド"
+summary: "小さなJavaScriptランタイム txiki.js を、日本語で触りながら理解するための非公式ガイド。ES Modules、Web API、tjs: 標準ライブラリ、HTTPサーバー、TPKまで扱います。"
+topics: ["javascript", "txikijs", "quickjs", "webapi", "runtime"]
+published: false
+price: 0
+chapters:
+  - introduction
+  - getting-started
+  - modules
+  - standard-library
+  - web-server
+  - app-packages
