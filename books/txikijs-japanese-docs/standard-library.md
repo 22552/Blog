@@ -1,71 +1,56 @@
 ---
-title: "tjs: 標準ライブラリ"
+title: "Standard Library"
 free: true
 ---
 
-# `tjs:` 標準ライブラリ
+# Standard Library
 
-txiki.js には、Web標準だけでは足りないサーバー/OS向け機能が `tjs:` 名前空間で用意されています。
-
-代表例:
+txiki.jsにはcore runtimeの上に構築された小さな標準module群があります。importには `tjs:` schemeを使います。
 
 ```js
-import path from 'tjs:path';
-import { Database } from 'tjs:sqlite';
-import { WASI } from 'tjs:wasi';
-```
-
-このほか FFI、hashing などもあります。
-
-## `tjs:path`
-
-ファイルパスの結合や正規化に使います。
-
-```js
-import path from 'tjs:path';
-
-const file = path.join('data', 'users.json');
-console.log(file);
-```
-
-OSごとの差を文字列連結で吸収しようとせず、path moduleを使うのが安全です。
-
-## `tjs:sqlite`
-
-SQLiteをランタイムから直接扱えます。
-
-```js
+import assert from 'tjs:assert';
+import { parse } from 'tjs:path';
 import { Database } from 'tjs:sqlite';
 
-const db = new Database('app.db');
+assert.eq(1 + 1, 2);
 ```
 
-小さなWebアプリやCLIなら、外部DBサーバーを用意せず「txiki.js + SQLite」だけで完結させられます。
+## Module一覧
 
-APIの細部はバージョンによって変わる可能性があるため、実際に使う際は公式のStandard Libraryリファレンスも確認してください。
+| Module | 用途 |
+|---|---|
+| `tjs:assert` | test向けassertion |
+| `tjs:ffi` | native shared libraryを呼ぶFFI |
+| `tjs:getopts` | CLI argument parsing |
+| `tjs:hashing` | cryptographic hash |
+| `tjs:ipaddr` | IP addressのparse・操作 |
+| `tjs:path` | POSIX / Windows path utility |
+| `tjs:posix-socket` | low-level POSIX socket API |
+| `tjs:readline` | interactive line editing / ANSI color |
+| `tjs:sqlite` | SQLite3 |
+| `tjs:utils` | value formatting / inspectionなど |
+| `tjs:uuid` | UUID生成・validation |
+| `tjs:wasi` | WebAssembly System Interface |
 
-## `tjs:ffi`
+Web APIと違い、これらはglobalではなく明示的にimportします。
 
-FFIはネイティブライブラリをJavaScriptから呼ぶための機能です。
+## Build-time feature gating
 
-これはtxiki.jsの面白いところの一つで、JavaScriptだけでは届かない既存Cライブラリなどと接続できます。一方で、Web APIより低レベルなので、型やメモリの扱いを間違えるとクラッシュにつながります。
+custom buildでは一部moduleが存在しない場合があります。
 
-まずはWeb APIと標準ライブラリで足りるか確認し、必要なときにFFIへ降りるのがおすすめです。
+`BUILD_WITH_SQLITE=OFF` なら `tjs:sqlite` はimportできません。この場合、`localStorage` は永続SQLiteではなくmemory上へfallbackします。
 
-## WASI
+`BUILD_WITH_WASM=OFF` なら `tjs:wasi` とglobal `WebAssembly` が使えません。
 
-`tjs run` は `.wasm` ファイルを指定した場合、WASIランナーとして実行できます。またJavaScript側から `tjs:wasi` を使うこともできます。
+利用可能かは `tjs.engine.features` で判定できます。
 
-```bash
-tjs run program.wasm
+```js
+if (tjs.engine.features.sqlite) {
+  const { Database } = await import('tjs:sqlite');
+  const db = new Database('app.db');
+}
 ```
 
-JavaScriptランタイムなのに、WebAssemblyの小さな実行環境としても遊べます。
+標準moduleごとのsymbol-level APIは公式TypeDocのAPI Referenceで確認できます。このBookでは特に使用頻度の高いhashing、FFI、WASI、filesystemとの組み合わせを個別章で説明します。
 
-## `tjs` グローバル
-
-module以外にも、ファイル操作や環境情報などは `tjs` グローバルから利用できます。
-
-たとえばコード中では `tjs.cwd`、`tjs.tmpDir`、`tjs.args` などが登場します。
-
-「ブラウザ互換APIはグローバル」「txiki.js固有の機能は `tjs` / `tjs:`」と考えると整理しやすいです。
+参照: txiki.js `website/docs/features/standard-library.md`
