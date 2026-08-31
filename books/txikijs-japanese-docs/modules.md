@@ -1,89 +1,129 @@
 ---
-title: "ModulesとImport Maps"
+title: "Modules"
 free: true
 ---
 
-# ModulesとImport Maps
+# Modules
 
-txiki.js は標準の ES Modules を中心に設計されています。
+txiki.jsは標準ES Modulesを使います。すべての `.js` fileはmoduleとして扱われ、local file、HTTP URL、標準libraryなどからimportできます。
+
+## Local import
 
 ```js
-import { add } from './math.js';
-console.log(add(2, 3));
+import { helper } from './lib/utils.js';
+import config from '../config.js';
 ```
 
-ローカルファイルでは拡張子を省略せず、`./math.js` のように書くのが基本です。
+拡張子は必須です。自動的な `.js` 補完や `index.js` 探索はありません。
 
-## `tjs:` 標準ライブラリ
-
-ランタイム固有の機能は `tjs:` から import します。
+## `tjs:` 標準library
 
 ```js
+import assert from 'tjs:assert';
 import path from 'tjs:path';
 import { Database } from 'tjs:sqlite';
 ```
 
-`node:` ではなく `tjs:` なのが txiki.js らしいところです。
-
 ## HTTP import
 
-URLをそのまま module specifier にできます。
-
 ```js
-import { something } from 'https://example.com/mod.js';
+import { render } from 'https://esm.sh/preact';
+import data from 'https://example.com/api/config.js';
 ```
 
-小さなスクリプトでは、パッケージマネージャを挟まずWeb上のES Moduleを直接読み込めるのが便利です。ただし、本番用途ではURL先の変更や可用性も依存関係になるため、固定URLを使う・vendorするなどの方針も考えましょう。
+module解決中にURLから取得され、同じURLはmodule identifierとしてcacheされます。
 
-## JSON / Text / Bytes
+## Import Attributes
 
-Import Attributesを使ってJavaScript以外のファイルもmoduleとして扱えます。
+JavaScript以外のresourceもmoduleとして読み込めます。
+
+### JSON
 
 ```js
-import config from './config.json' with { type: 'json' };
-import html from './index.html' with { type: 'text' };
-import wasm from './module.wasm' with { type: 'bytes' };
+import data from './data.json' with { type: 'json' };
 ```
 
-`json` はオブジェクト、`text` は文字列、`bytes` は `Uint8Array` としてdefault exportされます。
+`.json` はattributeなしでもJSONとして扱われます。
+
+### Text
+
+```js
+import template from './template.html' with { type: 'text' };
+```
+
+### Bytes
+
+```js
+import binary from './module.wasm' with { type: 'bytes' };
+```
+
+いずれも値はdefault exportです。textはstring、bytesは `Uint8Array` になります。
 
 ## Import Maps
 
-bare specifierを使いたいときはImport Mapが使えます。
-
-`import-map.json`:
+bare specifierをpathやURLへ対応付けできます。
 
 ```json
 {
   "imports": {
-    "utils": "./lib/utils.js",
-    "api": "https://example.com/api.js"
+    "lodash": "./vendor/lodash/index.js",
+    "api": "https://cdn.example.com/api.js"
   }
 }
 ```
 
-実行:
+CLIでは次のように指定します。
 
 ```bash
 tjs run --import-map import-map.json app.js
 ```
 
-`app.js`:
+TPKでは `app.json` に `imports` / `scopes` を直接書けます。
+
+JavaScriptから設定する場合は `tjs.setImportMap(map, baseDir)` を使います。
 
 ```js
-import { hello } from 'utils';
-hello();
+tjs.setImportMap({
+  imports: {
+    'pkg': './vendor/pkg/index.js',
+    'pkg/': './vendor/pkg/'
+  }
+}, import.meta.dirname);
 ```
 
-TPKアプリではImport Mapを別ファイルにせず、`app.json` の `imports` / `scopes` に直接書くこともできます。
+mapは対象moduleのimportより先に設定する必要があります。後から変更しても、既に解決済みのmoduleには遡って適用されません。再度呼ぶと前のmapを置き換えます。
 
-## Node.jsとの違い
+## Prefix mapping
 
-Node.jsのように `node_modules` を自動探索することを前提にしていません。
+末尾 `/` のkeyはprefixとして働きます。
 
-- 相対/絶対パス
-- `tjs:`
-- HTTP(S) URL
-- Import Maps
+```json
+{
+  "imports": {
+    "lib/": "./vendor/lib/"
+  }
+}
+```
 
-という、比較的Web標準に近い組み合わせでmoduleを解決します。
+`lib/foo.js` は `./vendor/lib/foo.js` へ解決されます。
+
+## Scoped mapping
+
+特定directory配下だけ別versionへ向けることもできます。
+
+```json
+{
+  "imports": { "pkg": "./vendor/pkg-v2/index.js" },
+  "scopes": {
+    "./legacy/": { "pkg": "./vendor/pkg-v1/index.js" }
+  }
+}
+```
+
+最も具体的なscope、つまり最長prefix matchが優先されます。
+
+## 注意点
+
+同時にactiveにできるImport Mapは1つです。mapにmatchしないspecifierは通常のmodule resolutionへ進みます。`tjs:*` も明示的にmappingすれば置き換え対象になり得ます。
+
+参照: txiki.js `website/docs/guides/modules.md`
