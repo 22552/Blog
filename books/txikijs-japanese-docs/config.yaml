@@ -1,5 +1,5 @@
 title: "txiki.js 日本語ドキュメント（非公式）"
-summary: "txiki.js公式ドキュメントの手書き21ページに対応し、機能・API・注意点を日本語で追えるようにした非公式日本語版。"
+summary: "txiki.js公式ドキュメントの手書き21ページに対応した非公式日本語版。原文はSaúl Ibarra Corretgé氏らによるMIT Licenseのtxiki.js公式Docsを参照。"
 topics: ["javascript", "txikijs", "quickjs", "webapi", "runtime"]
 published: false
 price: 0
