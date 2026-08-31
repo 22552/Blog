@@ -5,6 +5,17 @@ free: true
 
 # はじめに
 
+:::message
+このBookは、txiki.js公式ドキュメントを元に作成した**非公式日本語版**です。
+
+Original documentation: Copyright (c) 2019-present Saúl Ibarra Corretgé and contributors  
+Original project: https://github.com/saghul/txiki.js  
+License: MIT License  
+License text: https://github.com/saghul/txiki.js/blob/master/LICENSE
+
+翻訳・日本語版の編集: 22552
+:::
+
 `txiki.js` は小さく強力なJavaScript runtimeです。名前の由来になったバスク語 `txikia` は「小さい」「tiny」という意味です。最新のECMAScriptを対象にし、WinterTC互換を目指しています。
 
 JavaScript engineにはQuickJS-ng、platform layerにはlibuvを使っています。ブラウザで馴染みのあるWeb Platform APIと、filesystem・socket・processなどのOS寄りAPIを同じruntimeで扱えるのが特徴です。
