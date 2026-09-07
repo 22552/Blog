@@ -63,6 +63,8 @@ ip6.arpa配下のメールアドレスが完成
 
 ## 1. IPv6プレフィックスを用意する
 
+![HEのヘッダー](https://static.zenn.studio/user-upload/831eb901dc6e-20260907.jpeg)
+
 今回使うのはHurricane ElectricのTunnelbrokerサービスです。無料でIPv6トンネルを作成でき、ルーティング用のプレフィックスが1つ割り当てられます。
 
 例えば、次のようなプレフィックスが割り当てられたとします。
@@ -149,6 +151,8 @@ Hurricane Electric
 ```
 
 具体的には、Tunnelbrokerの管理画面で対象プレフィックスの詳細を開き、「rDNS」タブから委任先ネームサーバーを入力します。ここに、後述するdeSEC側で発行されるネームサーバー名(`ns1.desec.io`など)を指定します。
+
+![rDNS設定画面](https://static.zenn.studio/user-upload/93789e2a097a-20260907.jpeg)
 
 これによってHE側は「このゾーンについて問い合わせが来たら、deSECのネームサーバーに聞いてください」という状態になり、実際のレコードの追加・変更はdeSEC側で自由に行えるようになります。
 
