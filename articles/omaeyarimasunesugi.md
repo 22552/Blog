@@ -3,7 +3,7 @@ title: "Torではない開かれたネットワーク　Yggdrasil"
 emoji: "🌳"
 type: "tech"
 topics: ["network", "p2p", "ipv6", "mesh", "decentralized"]
-published: false
+published: true
 ---
 
 ## はじめに
