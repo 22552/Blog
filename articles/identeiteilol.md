@@ -1,5 +1,5 @@
 ---
-title: "自分で自分を管理すること、それってきっと大事なんじゃない？Solidという選択肢
+title: "自分で自分を管理すること、きっとそれは大切なこと。Solidという選択肢"
 emoji: "🔐"
 type: "tech"
 topics: ["solid", "decentralization", "web3", "privacy", "自己管理"]
